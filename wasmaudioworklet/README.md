@@ -84,6 +84,12 @@ Often when creating videos like this you'd want them to be able to loop seamless
 
 `ffmpeg -stream_loop 3 -i input.mp4 -c copy output_looped.mp4`
 
+# Embedding videos
+
+Convert them for intra-frame:
+
+`ffmpeg -i movie.mp4 -c:v libx264 -intra movie2.mp4`
+
 # Final words
 
 **`WASM` should be pronounced like `AWESOME` starting with a `W`**
