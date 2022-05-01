@@ -1,6 +1,7 @@
 import { setProgressbarValue } from '../common/ui/progress-bar.js';
 import { getCurrentTimeSeconds, setUseDefaultVisualizer, getUseDefaultVisualizer, getTargetNoteStates, clearPositions } from './defaultvisualizer.js';
 import { setGetCurrentTimeFunction, visualizeSong } from './midieventlistvisualizer.js';
+import { getActiveVideo } from '../midisequencer/songcompiler.js';
 import loadMP4Module from './mp4.js';
 
 const vertexShaderSrc = `            
@@ -12,15 +13,6 @@ void main() {
 
 let exporting = false;
 let canvas;
-
-function setupVideo() {
-    const video = document.createElement('video');
-    video.muted = true;
-    video.preload = 'auto';
-    
-    video.src = 'movie2.mp4';
-    return video;
-}
 
 function initTexture(gl) {
     const texture = gl.createTexture();
@@ -156,9 +148,6 @@ export function setupWebGL(source, targetCanvas, customGetTimeSeconds = null) {
         targetNoteStatesUniformLocation,
         texture
     } = configureGLContext(source);
-    
-    const video = setupVideo();
-    
 
     const render = () => {
         if (exporting || getUseDefaultVisualizer()) {
@@ -168,10 +157,14 @@ export function setupWebGL(source, targetCanvas, customGetTimeSeconds = null) {
             return;
         }
         const currentTimeSeconds = customGetTimeSeconds ? customGetTimeSeconds() : getCurrentTimeSeconds();
-        if (currentTimeSeconds) {
-            video.currentTime = currentTimeSeconds.toFixed(2);
+        
+        const currentVideo = getActiveVideo(currentTimeSeconds * 1000);
+        if (currentVideo) {
+            if (currentTimeSeconds) {
+                currentVideo.currentTime = currentTimeSeconds.toFixed(2);
+            }
+            updateTexture(glContext, texture, currentVideo);
         }
-        updateTexture(glContext, texture, video);
 
         glContext.uniform1f(timeUniformLocation, currentTimeSeconds);
         glContext.uniform1fv(targetNoteStatesUniformLocation, getTargetNoteStates());

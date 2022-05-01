@@ -9,6 +9,7 @@ export let recordingStartTimeMillis = 0;
 let muted = {};
 let solo = {};
 export let addedAudio = [];
+const addedVideo = {};
 
 let trackerPatterns = [];
 
@@ -47,6 +48,14 @@ function stopRecording() {
     output.sendMessage([SEQ_MSG_STOP_RECORDING]);
 }
 
+function startVideo(name, clipStartTime = 0) {
+    addedVideo[name].schedule.push({startTime: currentTime(), clipStartTime});
+}
+
+function stopVideo(name) {
+    addedVideo[name].schedule[addedVideo[name].schedule.length-1].stopTime = currentTime();
+}
+
 const noteFunctions = createNoteFunctions();
 const songargs = {
     'output': output,
@@ -74,6 +83,8 @@ const songargs = {
     'waitForBeat': waitForBeat,
     'startRecording': startRecording,
     'stopRecording': stopRecording,
+    'startVideo': startVideo,
+    'stopVideo': stopVideo,
     'mute': (channel) => muted[channel] = true,
     'solo': (channel) => solo[channel] = true,
     'addInstrument': (instrument) => instrumentNames.push(instrument),
@@ -96,6 +107,15 @@ const songargs = {
             }));            
         }
     },
+    'addVideo': async(name, url) => {
+        if (!addedVideo[name]) {
+            const videoElement = document.createElement('video');
+            videoElement.src = url;
+            videoElement.autoplay = false;
+            videoElement.muted = true;
+            addedVideo[name] = {videoElement, schedule: []};
+        }
+    },
     'note': (noteNumber, duration, velocity, offset) =>
         noteFunctions[noteFunctionKeys[noteNumber]](duration, velocity, offset)
 };
@@ -106,6 +126,7 @@ export async function compileSong(songsource) {
     songmessages = [];
     instrumentNames = [];
     trackerPatterns = [];
+    Object.values(addedVideo).forEach(vid => vid.schedule = []);
     muted = {};
     solo = {};
 
@@ -224,4 +245,12 @@ export function createMultipatternSequence() {
     console.log(outputPatterns);
     console.log('created multipartsequence. Here is the patternmap', JSON.stringify(patternmap));
     return outputPatterns;
+}
+
+export function getActiveVideo(milliseconds) {
+    return Object.values(addedVideo)
+        .find(vid =>
+            vid.schedule
+            .find(sch => sch.startTime <= milliseconds && (!sch.stopTime || sch.stopTime > milliseconds))
+        )?.videoElement;
 }
