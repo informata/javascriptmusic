@@ -248,9 +248,21 @@ export function createMultipatternSequence() {
 }
 
 export function getActiveVideo(milliseconds) {
-    return Object.values(addedVideo)
+    let activeSchedule;
+    const activeVideo = Object.values(addedVideo)
         .find(vid =>
             vid.schedule
-            .find(sch => sch.startTime <= milliseconds && (!sch.stopTime || sch.stopTime > milliseconds))
-        )?.videoElement;
+            .find(sch => {
+                if (sch.startTime <= milliseconds && (!sch.stopTime || sch.stopTime > milliseconds)) {
+                    activeSchedule = sch;
+                    return true;
+                } else {
+                    return false;
+                }
+            })
+        );
+    if (activeVideo) {
+        activeVideo.videoElement.currentTime = ((milliseconds - activeSchedule.startTime + activeSchedule.clipStartTime) / 1000).toFixed(2);
+        return activeVideo.videoElement;
+    }
 }

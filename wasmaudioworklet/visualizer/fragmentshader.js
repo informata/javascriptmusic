@@ -157,19 +157,16 @@ export function setupWebGL(source, targetCanvas, customGetTimeSeconds = null) {
             return;
         }
         const currentTimeSeconds = customGetTimeSeconds ? customGetTimeSeconds() : getCurrentTimeSeconds();
-        
+
         const currentVideo = getActiveVideo(currentTimeSeconds * 1000);
         if (currentVideo) {
-            if (currentTimeSeconds) {
-                currentVideo.currentTime = currentTimeSeconds.toFixed(2);
-            }
             updateTexture(glContext, texture, currentVideo);
         }
 
         glContext.uniform1f(timeUniformLocation, currentTimeSeconds);
         glContext.uniform1fv(targetNoteStatesUniformLocation, getTargetNoteStates());
         glContext.drawArrays(glContext.TRIANGLES, 0, 6);
-        
+
         window.requestAnimationFrame(render);
     }
 
