@@ -183,18 +183,19 @@ export async function exportVideo(source, eventlist) {
     const {
         glContext,
         timeUniformLocation,
-        targetNoteStatesUniformLocation
+        targetNoteStatesUniformLocation,
+        texture
     } = configureGLContext(source);
 
     const MP4 = await loadMP4Module();
 
-    const framerate = 30;
+    const framerate = 24;
 
     const encoder = MP4.createWebCodecsEncoder({
         width: width,
         height: height,
         fps: framerate,
-        bitrate: 10_000_000,
+        bitrate: 15_000_000,
         encoderOptions: {
             framerate: framerate,
         },
@@ -214,11 +215,18 @@ export async function exportVideo(source, eventlist) {
         setProgressbarValue(frame_counter / totalFrames);
         await new Promise(r => requestAnimationFrame(r));
 
-        glContext.uniform1f(timeUniformLocation, await currentTimeMillisFunc() / 1000);
+        const currentTimeMillis = await currentTimeMillisFunc();
+
+        const currentVideo = getActiveVideo(currentTimeMillis);
+        if (currentVideo) {
+            updateTexture(glContext, texture, currentVideo);
+        }
+
+        glContext.uniform1f(timeUniformLocation, currentTimeMillis / 1000);
         glContext.uniform1fv(targetNoteStatesUniformLocation, getTargetNoteStates());
         glContext.drawArrays(glContext.TRIANGLES, 0, 6);
 
-        const frame = new VideoFrame(canvas);
+        const frame = new VideoFrame(canvas, {timestamp: currentTimeMillis * 1000});
         encoder.addFrame(frame);
         frame.close();
     }
