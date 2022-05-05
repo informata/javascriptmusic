@@ -49,11 +49,11 @@ function stopRecording() {
 }
 
 function startVideo(name, clipStartTime = 0) {
-    addedVideo[name].schedule.push({startTime: currentTime(), clipStartTime});
+    addedVideo[name].schedule.push({ startTime: currentTime(), clipStartTime });
 }
 
 function stopVideo(name) {
-    addedVideo[name].schedule[addedVideo[name].schedule.length-1].stopTime = currentTime();
+    addedVideo[name].schedule[addedVideo[name].schedule.length - 1].stopTime = currentTime();
 }
 
 const noteFunctions = createNoteFunctions();
@@ -101,19 +101,26 @@ const songargs = {
                     audioObj.rightbuffer = buf.getChannelData(1).buffer;
                     console.log('loaded', url);
                     resolve(audioObj);
-                } catch(e) {
+                } catch (e) {
                     reject(e);
                 }
-            }));            
+            }));
         }
     },
-    'addVideo': async(name, url) => {
+    'addVideo': async (name, url) => {
         if (!addedVideo[name]) {
             const videoElement = document.createElement('video');
             videoElement.src = url;
             videoElement.autoplay = false;
             videoElement.muted = true;
-            addedVideo[name] = {videoElement, schedule: []};
+            addedVideo[name] = { videoElement, schedule: [] };
+        }
+    },
+    'addImage': async (name, url) => {
+        if (!addedVideo[name]) {
+            const imageElement = new Image();
+            imageElement.src = url;
+            addedVideo[name] = { imageElement, schedule: [] };
         }
     },
     'note': (noteNumber, duration, velocity, offset) =>
@@ -252,17 +259,21 @@ export function getActiveVideo(milliseconds) {
     const activeVideo = Object.values(addedVideo)
         .find(vid =>
             vid.schedule
-            .find(sch => {
-                if (sch.startTime <= milliseconds && (!sch.stopTime || sch.stopTime > milliseconds)) {
-                    activeSchedule = sch;
-                    return true;
-                } else {
-                    return false;
-                }
-            })
+                .find(sch => {
+                    if (sch.startTime <= milliseconds && (!sch.stopTime || sch.stopTime > milliseconds)) {
+                        activeSchedule = sch;
+                        return true;
+                    } else {
+                        return false;
+                    }
+                })
         );
     if (activeVideo) {
-        activeVideo.videoElement.currentTime = ((milliseconds - activeSchedule.startTime + activeSchedule.clipStartTime) / 1000).toFixed(2);
-        return activeVideo.videoElement;
+        if (activeVideo.videoElement) {
+            activeVideo.videoElement.currentTime = ((milliseconds - activeSchedule.startTime + activeSchedule.clipStartTime) / 1000).toFixed(2);
+            return activeVideo.videoElement;
+        } else if (activeVideo.imageElement && activeVideo.imageElement.complete) {
+            return activeVideo.imageElement;
+        }
     }
 }
