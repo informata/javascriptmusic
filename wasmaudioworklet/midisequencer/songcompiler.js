@@ -200,6 +200,7 @@ export function createMultipatternSequence() {
         if (trackerPatterns[n]) {
             const pattern = trackerPatterns[n];
             const outputPattern = {
+                eventlistuncompressed: pattern.output.midievents,
                 eventlist: convertEventListToByteArraySequence(pattern.output.midievents),
                 startTimes: [pattern.output.startTime],
                 channel: pattern.channel

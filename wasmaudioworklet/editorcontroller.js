@@ -219,6 +219,7 @@ export async function initEditor(componentRoot) {
                                     <label><input type="radio" name="exporttype" value="${EXPORT_MODE_MIDISYNTH_WASM_LIB}">WASM Library module</label><br />
                                     <label><input type="radio" name="exporttype" value="${EXPORT_MODE_MIDISYNTH_MULTIPART_WASM_LIB}">WASM midi-multipart module</label><br />
                                     <label><input type="radio" name="exporttype" value="${EXPORT_MODE_MIDISYNTH_MULTIPART_WASM_LIB_PNG}">PNG compressed WASM midi-multipart module</label><br />
+                                    <label><input type="radio" name="exporttype" value="midipartsjson">MIDI parts as JSON</label><br />
                                     <label><input type="radio" name="exporttype" value="pngsources">source code as PNG image</label><br />
                                     ${isWebCodecsSupported() ? `<label><input type="radio" name="exporttype" value="video">Shader video (without sound)</label><br />` : ''}
                                 </form>
@@ -274,6 +275,13 @@ export async function initEditor(componentRoot) {
                             triggerDownload(encodeBufferAsPNG(sourcesbytes), 'wasmstuff.png');
                         } else if (exportProject === 'video') {
                             await exportVideo(shadersource, eventlist);
+                        } else if (exportProject === 'midipartsjson') {
+                            const multipartsequence = createMultipatternSequence();
+                            multipartsequence.forEach(part => {
+                                delete part.eventlist;
+                            });
+                            triggerDownload(URL.createObjectURL(new Blob([JSON.stringify(multipartsequence)],
+                                            { type: "application/json" })), 'songmidiparts.json');
                         }
                     }
                     toggleSpinner(false);
